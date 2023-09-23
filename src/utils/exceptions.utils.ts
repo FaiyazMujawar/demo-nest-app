@@ -15,3 +15,11 @@ export function notFound(message: string) {
 export function forbidden(message: string) {
   return new ApiException(message, HttpStatus.FORBIDDEN);
 }
+
+export function unauthorized(message: string) {
+  return new ApiException(message, HttpStatus.UNAUTHORIZED);
+}
+
+export function badRequest(message: string) {
+  return new ApiException(message, HttpStatus.BAD_REQUEST);
+}

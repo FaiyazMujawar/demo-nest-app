@@ -2,7 +2,7 @@ import { integer, pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const Roles = pgEnum('Roles', ['USER', 'ADMIN']);
 
-export const users = pgTable('app_users', {
+export const USERS = pgTable('app_users', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   firstname: varchar('first_name', { length: 256 }).notNull(),
   lastname: varchar('last_name', { length: 256 }).notNull(),
@@ -13,5 +13,5 @@ export const users = pgTable('app_users', {
   role: Roles('role').default('USER'),
 });
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export type User = typeof USERS.$inferSelect;
+export type NewUser = typeof USERS.$inferInsert;

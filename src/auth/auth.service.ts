@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DB, DbType } from '../global/providers/db.provider';
 import { LoginRequest } from './types';
-import { users, User } from '../schema';
+import { USERS, User } from '../schema';
 import { eq } from 'drizzle-orm';
 import _ from 'lodash';
 import { compareSync } from 'bcrypt';
@@ -18,15 +18,15 @@ export class AuthService {
   ) {}
 
   async login(loginRequest: LoginRequest) {
-    const usersInDb = await this.db
+    const users = await this.db
       .select()
-      .from(users)
-      .where(eq(users.username, loginRequest.username));
+      .from(USERS)
+      .where(eq(USERS.username, loginRequest.username));
 
-    if (_.isEmpty(usersInDb)) {
+    if (_.isEmpty(users)) {
       throw notFound(`User ${loginRequest.username} not found`);
     }
-    const user = usersInDb[0];
+    const user = users[0];
     if (!compareSync(loginRequest.password, user.password)) {
       throw forbidden('Password incorrect');
     }
@@ -40,15 +40,15 @@ export class AuthService {
 
     const token = authHeader.substring(7);
     const uid = this.tokenService.getClaim<string>(token, 'uid');
-    const usersInDb = await this.db
+    const users = await this.db
       .selectDistinct()
-      .from(users)
-      .where(eq(users.id, uid));
-    if (_.isEmpty(usersInDb)) {
+      .from(USERS)
+      .where(eq(USERS.id, uid));
+    if (_.isEmpty(users)) {
       throw notFound('User not found');
     }
 
-    return this.getAccessTokens(usersInDb[0]);
+    return this.getAccessTokens(users[0]);
   }
 
   private getAccessTokens(user: User) {

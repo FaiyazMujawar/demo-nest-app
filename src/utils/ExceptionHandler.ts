@@ -11,13 +11,13 @@ import { Response } from 'express';
 export class ExceptionHandler implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const response = {
-      message: '',
+      message: exception.message,
       errors: [],
       timestamp: new Date(),
     };
+
     if (exception instanceof ApiException) {
       const ex = exception as ApiException;
-      response.message = ex.message;
       response.errors = ex.errors;
     }
 

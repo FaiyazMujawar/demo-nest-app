@@ -8,11 +8,11 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginRequest: LoginRequest) {
-    return this.authService.login(loginRequest);
+    return await this.authService.login(loginRequest);
   }
 
   @Post('refresh-token')
   async refreshToken(@Headers('Authorization') auth: string) {
-    return this.authService.refreshToken(auth);
+    return await this.authService.refreshToken(auth);
   }
 }
