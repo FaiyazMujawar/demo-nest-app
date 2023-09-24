@@ -16,7 +16,7 @@ export const USERS = pgTable('app_users', {
   market: integer('market').references(() => MARKETS.code),
 });
 
-export const USER_MARKET = relations(MARKETS, ({ one }) => ({
+export const USER_RELATIONS = relations(MARKETS, ({ one }) => ({
   market: one(USERS, {
     fields: [MARKETS.code],
     references: [USERS.market],

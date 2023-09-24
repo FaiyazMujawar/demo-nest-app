@@ -30,6 +30,7 @@
     "drizzle-orm": "^0.28.6",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
+    "nestjs-cls": "^3.5.1",
     "postgres": "^3.3.5",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
@@ -45,6 +46,7 @@
     "@types/jest": "^29.5.2",
     "@types/jsonwebtoken": "^9.0.3",
     "@types/lodash": "^4.14.198",
+    "@types/multer": "^1.4.7",
     "@types/node": "^20.3.1",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^6.0.0",

@@ -35,8 +35,8 @@ export class LoadUserMiddleware implements NestMiddleware {
       next(notFound('User not found'));
       return;
     }
-    // @ts-ignore
-    req.user = users[0];
+    const { id, role, market } = users[0];
+    req.user = { id, role, market };
     next();
   }
 }
