@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { TokenService } from './token/token.service';
 import { LoadUserMiddleware as loadUser } from './middlewares/loaduser/loaduser.middleware';
+import { MarketModule } from './market/market.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { LoadUserMiddleware as loadUser } from './middlewares/loaduser/loaduser.
     UserModule,
     TokenModule,
     AuthModule,
+    MarketModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService, TokenService],
