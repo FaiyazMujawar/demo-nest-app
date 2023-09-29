@@ -1,7 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
   integer,
-  numeric,
   pgTable,
   primaryKey,
   real,
@@ -14,6 +13,7 @@ import { MARKETS } from './market';
 
 export const PRODUCTS = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
+  code: varchar('code', { length: 32 }).notNull().unique(),
   name: varchar('name', { length: 128 }).notNull(),
   description: text('description').notNull(),
   buyingPrice: real('buying_price').notNull(),

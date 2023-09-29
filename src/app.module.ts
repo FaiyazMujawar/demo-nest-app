@@ -4,22 +4,22 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { Request, Response } from 'express';
+import { ClsModule } from 'nestjs-cls';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { GlobalModule } from './global/global.module';
-import { ConfigModule } from '@nestjs/config';
-import { UserModule } from './user/user.module';
-import { TokenModule } from './token/token.module';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import { TokenService } from './token/token.service';
-import { LoadUserMiddleware as loadUser } from './middlewares/loaduser/loaduser.middleware';
+import { GlobalModule } from './global/global.module';
 import { MarketModule } from './market/market.module';
+import { LoadUserMiddleware as loadUser } from './middlewares/loaduser/loaduser.middleware';
 import { ProductModule } from './product/product.module';
-import { ClsModule } from 'nestjs-cls';
-import { Request, Response } from 'express';
-import _ from 'lodash';
+import { TokenModule } from './token/token.module';
+import { TokenService } from './token/token.service';
+import { UploadsModule } from './uploads/uploads.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -45,6 +45,7 @@ import _ from 'lodash';
         },
       },
     }),
+    UploadsModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService, TokenService],

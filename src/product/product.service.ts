@@ -1,18 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DB, DbType } from '../global/providers/db.provider';
-import _, { entries, isEmpty, isNil } from 'lodash';
-import {
-  MARKETS,
-  NewProduct,
-  PRODUCTS,
-  PRODUCT_MARKET,
-  Product,
-} from '../schema';
 import { eq, inArray } from 'drizzle-orm';
+import _, { isEmpty, isNil } from 'lodash';
 import { ClsService } from 'nestjs-cls';
+import { DB, DbType } from '../global/providers/db.provider';
 import { Role } from '../roles/role.enum';
-import { toProductResponses } from '../utils/mappers';
+import { MARKETS, PRODUCTS, PRODUCT_MARKET, Product } from '../schema';
+import { ProductImportDto } from '../uploads/xlsx/dto/Product';
 import { notFound, unauthorized } from '../utils/exceptions.utils';
+import { toProductResponses } from '../utils/mappers';
 import { ProductRequest, ProductResponse } from './types';
 
 @Injectable()
@@ -147,6 +142,10 @@ export class ProductService {
         deleted: true,
       };
     });
+  }
+
+  async importProducts(products: ProductImportDto[], uploadId: string) {
+    products.forEach((product) => console.log(product.name));
   }
 
   private isUserAuthorized(product: ProductResponse) {

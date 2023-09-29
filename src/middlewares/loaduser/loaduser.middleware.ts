@@ -1,11 +1,11 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
-import { notFound, unauthorized } from '../../utils/exceptions.utils';
 import { DB, DbType } from '../../global/providers/db.provider';
-import { TokenService } from '../../token/token.service';
 import { USERS } from '../../schema';
-import { eq } from 'drizzle-orm';
+import { TokenService } from '../../token/token.service';
+import { notFound, unauthorized } from '../../utils/exceptions.utils';
 
 @Injectable()
 export class LoadUserMiddleware implements NestMiddleware {
@@ -35,8 +35,8 @@ export class LoadUserMiddleware implements NestMiddleware {
       next(notFound('User not found'));
       return;
     }
-    const { id, role, market } = users[0];
-    req.user = { id, role, market };
+    const { id, role, market, username } = users[0];
+    req.user = { id, role, market, username };
     next();
   }
 }

@@ -5,6 +5,7 @@ declare namespace Express {
     id: string;
     role: Role;
     market: number;
+    username: string;
   }
   interface Request {
     user?: UserEntity;

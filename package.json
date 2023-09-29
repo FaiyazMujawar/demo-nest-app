@@ -27,13 +27,17 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "bcrypt": "^5.1.1",
+    "class-transformer": "^0.5.1",
     "drizzle-orm": "^0.28.6",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "nestjs-cls": "^3.5.1",
     "postgres": "^3.3.5",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "write-excel-file": "^1.4.27",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
