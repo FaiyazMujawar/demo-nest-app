@@ -12,7 +12,10 @@ export const DbProvider: FactoryProvider = {
   inject: [ConfigService],
   useFactory: (config: ConfigService) => {
     const connection = postgres(config.get<string>('DATABASE_URL'), { max: 1 });
-    return drizzle(connection, { schema, logger: true });
+    return drizzle(connection, {
+      schema,
+      logger: config.get<boolean>('LOG_SQL') ?? false,
+    });
   },
 };
 

@@ -58,7 +58,6 @@ export class UploadsService {
 
   async importFile(type: string, file: Buffer) {
     const parsedData = await parse(file, getUploadType(type));
-    console.log({ parsedData });
 
     const processor = this.PROCESSORS[type];
     const upload = await this.db

@@ -1,14 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
-import _, { isEmpty, isNil } from 'lodash';
+import { chunk as batch, isEmpty, isNil } from 'lodash';
 import { ClsService } from 'nestjs-cls';
 import { DB, DbType } from '../global/providers/db.provider';
 import { Role } from '../roles/role.enum';
-import { MARKETS, PRODUCTS, PRODUCT_MARKET, Product } from '../schema';
+import { MARKETS, PRODUCTS, PRODUCT_MARKET, Product, UPLOADS } from '../schema';
 import { ProductImportDto } from '../uploads/xlsx/dto/Product';
 import { notFound, unauthorized } from '../utils/exceptions.utils';
 import { toProductResponses } from '../utils/mappers';
 import { ProductRequest, ProductResponse } from './types';
+import { validateImportProduct } from './validations/product';
 
 @Injectable()
 export class ProductService {
@@ -49,7 +50,7 @@ export class ProductService {
   async getById(id: string) {
     const products = await this.getProductsQuery().where(eq(PRODUCTS.id, id));
 
-    if (_.isEmpty(products)) {
+    if (isEmpty(products)) {
       throw notFound(`Product ${id} not found`);
     }
     const product = toProductResponses({
@@ -145,7 +146,76 @@ export class ProductService {
   }
 
   async importProducts(products: ProductImportDto[], uploadId: string) {
-    products.forEach((product) => console.log(product.name));
+    const chunks = batch(products, this.context.get<number>('BATCH_SIZE'));
+    const errors: { [key: string]: string }[] = [];
+    let errorMessage = '';
+    try {
+      const promises = chunks.map((chunk) =>
+        this._importProducts(chunk, errors),
+      );
+      await Promise.all(promises);
+      errorMessage = errors
+        .map((error) => Object.values(error).join(', '))
+        .join(', ');
+    } catch (ex) {
+      errorMessage = ex.message;
+    }
+    await this.db
+      .update(UPLOADS)
+      .set({
+        errorRows: errors.length,
+        status: isEmpty(errors) ? 'COMPLETED' : 'ERROR',
+        errorMessage,
+        completedAt: new Date(),
+      })
+      .where(eq(UPLOADS.id, uploadId));
+  }
+
+  private async _importProducts(
+    products: ProductImportDto[],
+    errors: { [key: string]: string }[],
+  ) {
+    const markets = await this.db
+      .select()
+      .from(MARKETS)
+      .where(
+        inArray(
+          MARKETS.code,
+          products.flatMap((p) => p.markets),
+        ),
+      );
+    products.forEach(async (product) => {
+      const validation = validateImportProduct(product);
+      if (!isEmpty(validation)) {
+        errors.push(validation);
+        return;
+      }
+      const productInDb = await this.db
+        .insert(PRODUCTS)
+        .values(product)
+        .onConflictDoUpdate({
+          target: PRODUCTS.code,
+          set: {
+            name: product.name,
+            description: product.description,
+            buyingPrice: product.buyingPrice,
+            sellingPrice: product.sellingPrice,
+          },
+        })
+        .returning();
+      const productMarkets = markets.filter((m) =>
+        product.markets.includes(m.code),
+      );
+      await this.db
+        .insert(PRODUCT_MARKET)
+        .values(
+          productMarkets.map(({ code }) => ({
+            marketCode: code,
+            productId: productInDb[0].id,
+          })),
+        )
+        .onConflictDoNothing();
+    });
   }
 
   private isUserAuthorized(product: ProductResponse) {

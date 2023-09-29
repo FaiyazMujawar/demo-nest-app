@@ -59,8 +59,6 @@ export async function parse<T>(data: Buffer, type: Class<T>): Promise<T[]> {
   const workbook = XLSX.read(data, { cellDates: true, type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet, {}) as any[];
-  console.log({ json });
-
   return json.map((d) => transform(d, type));
 }
 

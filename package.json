@@ -29,6 +29,7 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "drizzle-orm": "^0.28.6",
+    "joi": "^17.10.2",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
