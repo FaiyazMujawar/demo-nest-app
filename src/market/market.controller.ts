@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { MarketService } from './market.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { Roles } from '../roles/roles.decorator';
 import { Role } from '../roles/role.enum';
+import { Roles } from '../roles/roles.decorator';
+import { MarketService } from './market.service';
 import { MarketRequest } from './types';
 
 @Controller('markets')

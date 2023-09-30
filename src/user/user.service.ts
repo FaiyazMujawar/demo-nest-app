@@ -1,26 +1,45 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DB, DbType } from '../global/providers/db.provider';
-import { USERS } from '../schema';
-import { AddUserRequest } from './types';
-import { eq, or } from 'drizzle-orm';
-import _ from 'lodash';
-import { badRequest, notFound } from '../utils/exceptions.utils';
 import { hashSync } from 'bcrypt';
+import { eq, inArray, or } from 'drizzle-orm';
+import { entries, isEmpty, isNil, keys } from 'lodash';
+import { ClsService } from 'nestjs-cls';
+import { DB, DbType } from '../global/providers/db.provider';
 import { MarketAssignmentRequest } from '../market/types';
-import { MARKETS } from '../schema';
-import { toUserResponse } from '../utils/mappers';
+import { MARKETS, USERS, USER_MARKET } from '../schema';
+import { badRequest, notFound } from '../utils/exceptions.utils';
+import { AddUserRequest } from './types';
 
 @Injectable()
 export class UserService {
-  constructor(@Inject(DB) private db: DbType) {}
+  constructor(
+    @Inject(DB) private db: DbType,
+    private context: ClsService,
+  ) {}
 
   async getAll() {
-    return (
-      await this.db
-        .select()
-        .from(USERS)
-        .leftJoin(MARKETS, eq(USERS.market, MARKETS.code))
-    ).map(({ app_users: user, markets }) => toUserResponse(user, markets));
+    const currentUser = this.context.get<Express.UserEntity>('user');
+    const currentMarket = this.context.get<number>('market');
+
+    return await this.db.query.USERS.findMany({
+      with: {
+        markets: {
+          where: currentUser.superadmin
+            ? null
+            : eq(USER_MARKET.marketCode, currentMarket),
+          columns: {
+            role: true,
+          },
+          with: {
+            market: {
+              columns: {
+                code: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async add(addUserRequest: AddUserRequest) {
@@ -33,18 +52,29 @@ export class UserService {
           eq(USERS.username, addUserRequest.username),
         ),
       );
-    if (!_.isEmpty(users)) {
+    if (!isEmpty(users)) {
       const { email, username } = addUserRequest;
       let message = '';
       if (users.some((user) => user.email === email)) {
         message = 'Email';
       }
       if (users.some((user) => user.username === username)) {
-        if (!_.isEmpty(message)) message += ' and ';
+        if (!isEmpty(message)) message += ' and ';
         message += 'Username';
       }
       message += ' already in use';
       throw badRequest(message);
+    }
+
+    const marketCodes = keys(addUserRequest.markets).map((market) =>
+      parseInt(market),
+    );
+
+    const markets = await this.db.query.MARKETS.findMany({
+      where: inArray(MARKETS.code, marketCodes),
+    });
+    if (marketCodes.length !== markets.length) {
+      throw notFound('One or more markets not found');
     }
 
     const user = await this.db
@@ -55,29 +85,55 @@ export class UserService {
       })
       .returning();
 
+    await this.db.insert(USER_MARKET).values(
+      entries(addUserRequest.markets).map(({ '0': marketCode, '1': role }) => ({
+        marketCode: parseInt(marketCode),
+        userId: user[0].id,
+        role,
+      })),
+    );
+
     delete user[0].password;
 
     return { user: user[0] };
   }
 
-  async assignMarket({ userId, marketCode }: MarketAssignmentRequest) {
-    const markets = await this.db
+  async assignMarket({ userId, markets }: MarketAssignmentRequest) {
+    const user = await this.db.query.USERS.findFirst({
+      where: eq(USERS.id, userId),
+    });
+    if (isNil(user)) {
+      throw notFound(`User ${userId} not found`);
+    }
+    const marketCodes = keys(markets).map((market) => parseInt(market));
+    const marketsInDb = await this.db
       .select()
       .from(MARKETS)
-      .where(eq(MARKETS.code, marketCode));
-    if (_.isEmpty(markets)) {
-      throw notFound(`Market ${marketCode} not found`);
+      .where(inArray(MARKETS.code, marketCodes));
+    if (marketCodes.length !== marketsInDb.length) {
+      throw notFound('One or more markets not found');
     }
-
-    const update = await this.db
-      .update(USERS)
-      .set({ market: markets[0].code })
-      .where(eq(USERS.id, userId))
-      .returning();
-    if (_.isEmpty(update)) {
-      throw notFound('User not found');
-    }
-
-    return { user: toUserResponse(update[0], markets[0]) };
+    await this.db.delete(USER_MARKET).where(eq(USER_MARKET.userId, userId));
+    await this.db
+      .insert(USER_MARKET)
+      .values(marketCodes.map((market) => ({ marketCode: market, userId })));
+    return await this.db.query.USERS.findFirst({
+      where: eq(USERS.id, userId),
+      with: {
+        markets: {
+          columns: {
+            role: true,
+          },
+          with: {
+            market: {
+              columns: {
+                code: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

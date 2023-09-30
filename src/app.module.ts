@@ -35,7 +35,7 @@ import { UserModule } from './user/user.module';
       middleware: {
         mount: true,
         generateId: true,
-        setup: (context, req: Request, res: Response) => {
+        setup: (context, req: Request, __: Response) => {
           context.set('user', req.user);
           const market = req.headers['market'] as string;
           context.set(

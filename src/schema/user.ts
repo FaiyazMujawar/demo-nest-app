@@ -1,5 +1,12 @@
-import { relations } from 'drizzle-orm';
-import { integer, pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { MARKETS } from './market';
 
 export const Roles = pgEnum('Roles', ['USER', 'ADMIN']);
@@ -12,16 +19,25 @@ export const USERS = pgTable('app_users', {
   username: varchar('username', { length: 50 }).notNull().unique(),
   password: varchar('password', { length: 256 }).notNull(),
   contact: integer('contact').notNull(),
-  role: Roles('role').default('USER'),
-  market: integer('market').references(() => MARKETS.code),
+  superadmin: boolean('superadmin').default(false),
 });
 
-export const USER_RELATIONS = relations(MARKETS, ({ one }) => ({
-  market: one(USERS, {
-    fields: [MARKETS.code],
-    references: [USERS.market],
+// JOIN TABLE
+export const USER_MARKET = pgTable(
+  'user_market',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => USERS.id),
+    marketCode: integer('market_code')
+      .notNull()
+      .references(() => MARKETS.code),
+    role: Roles('role').default('USER'),
+  },
+  (table) => ({
+    pk: primaryKey(table.userId, table.marketCode),
   }),
-}));
+);
 
 export type User = typeof USERS.$inferSelect;
 export type NewUser = typeof USERS.$inferInsert;

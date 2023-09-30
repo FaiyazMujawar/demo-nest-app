@@ -1,3 +1,5 @@
+import { Role } from '../roles/role.enum';
+
 export interface MarketRequest {
   name: string;
   code: number;
@@ -5,5 +7,5 @@ export interface MarketRequest {
 
 export interface MarketAssignmentRequest {
   userId: string;
-  marketCode: number;
+  markets: { [market: number]: Role };
 }

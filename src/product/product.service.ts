@@ -33,9 +33,10 @@ export class ProductService {
   async getAll() {
     const user = this.context.get<Express.UserEntity>('user');
     let query = this.getProductsQuery();
+    const currentMarket = this.context.get<number>('market');
 
-    if (user.role !== Role.ADMIN) {
-      query = query.where(eq(PRODUCT_MARKET.marketCode, user.market));
+    if (!user.superadmin && user.markets[currentMarket] !== Role.ADMIN) {
+      query = query.where(eq(PRODUCT_MARKET.marketCode, currentMarket));
     }
 
     const products = (await query.execute()).map(
@@ -220,9 +221,13 @@ export class ProductService {
 
   private isUserAuthorized(product: ProductResponse) {
     const loggedInUser = this.context.get<Express.UserEntity>('user');
-    if (loggedInUser.role === Role.ADMIN) return true;
-    return product.markets.some(
-      (market) => market.code === loggedInUser.market,
+    const currentMarket = this.context.get<number>('market');
+    if (loggedInUser.markets[currentMarket] === Role.ADMIN) return true;
+    return (
+      loggedInUser.superadmin ||
+      product.markets.some(
+        (market) => market.code === loggedInUser.markets[currentMarket],
+      )
     );
   }
 }

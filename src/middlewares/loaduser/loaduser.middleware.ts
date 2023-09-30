@@ -1,7 +1,7 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
-import _ from 'lodash';
+import _, { isNil } from 'lodash';
 import { DB, DbType } from '../../global/providers/db.provider';
 import { USERS } from '../../schema';
 import { TokenService } from '../../token/token.service';
@@ -20,6 +20,7 @@ export class LoadUserMiddleware implements NestMiddleware {
       next(unauthorized('Token is required'));
       return;
     }
+
     const token = authHeader.substring(7);
     if (!this.tokenService.verifyToken(token)) {
       next(unauthorized('Token is invalid or expired'));
@@ -27,16 +28,34 @@ export class LoadUserMiddleware implements NestMiddleware {
     }
     const uid = this.tokenService.getClaim<string>(token, 'uid');
 
-    const users = await this.db
-      .selectDistinct()
-      .from(USERS)
-      .where(eq(USERS.id, uid));
-    if (_.isEmpty(users)) {
+    const user = await this.db.query.USERS.findFirst({
+      where: eq(USERS.id, uid),
+      with: {
+        markets: {
+          columns: {
+            role: true,
+          },
+          with: {
+            market: {
+              columns: {
+                code: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (isNil(user)) {
       next(notFound('User not found'));
-      return;
     }
-    const { id, role, market, username } = users[0];
-    req.user = { id, role, market, username };
+    req.user = {
+      id: user.id,
+      username: user.username,
+      superadmin: user.superadmin,
+      markets: user.markets.map(({ role, market: { code } }) => ({
+        [code]: role,
+      })),
+    };
     next();
   }
 }

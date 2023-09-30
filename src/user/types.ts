@@ -8,4 +8,5 @@ export interface AddUserRequest {
   password: string;
   contact: number;
   role: Role;
+  markets: { [market: number]: Role };
 }

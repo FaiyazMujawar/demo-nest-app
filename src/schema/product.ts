@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import {
   integer,
   pgTable,
@@ -21,12 +20,6 @@ export const PRODUCTS = pgTable('products', {
   createdOn: timestamp('created_on').defaultNow(),
 });
 
-// RELATIONS FOR `PRODUCTS` TABLE
-export const PRODUCT_RELATIONS = relations(PRODUCTS, ({ many }) => ({
-  // PRODUCTS(one) => PRODUCT_MARKET(many) relation
-  markets: many(PRODUCT_MARKET),
-}));
-
 // JOIN TABLE
 export const PRODUCT_MARKET = pgTable(
   'product_market',
@@ -41,23 +34,6 @@ export const PRODUCT_MARKET = pgTable(
   (table) => ({
     // Composite primary key for this table
     pk: primaryKey(table.productId, table.marketCode),
-  }),
-);
-
-// RELATIONS FOR `PRODUCT_MARKET` TABLE
-export const PRODUCT_MARKET_RELATIONS = relations(
-  PRODUCT_MARKET,
-  ({ one }) => ({
-    // PRODUCT_MARKET(many) => PRODUCTS(one) relation
-    products: one(PRODUCTS, {
-      fields: [PRODUCT_MARKET.productId],
-      references: [PRODUCTS.id],
-    }),
-    // PRODUCT_MARKET(many) => MARKETS(one) relation
-    markets: one(MARKETS, {
-      fields: [PRODUCT_MARKET.marketCode],
-      references: [MARKETS.code],
-    }),
   }),
 );
 

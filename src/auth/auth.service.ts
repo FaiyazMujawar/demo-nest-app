@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DB, DbType } from '../global/providers/db.provider';
-import { LoginRequest } from './types';
-import { USERS, User } from '../schema';
-import { eq } from 'drizzle-orm';
-import _ from 'lodash';
-import { compareSync } from 'bcrypt';
-import { forbidden, notFound } from '../utils/exceptions.utils';
-import { TokenService } from '../token/token.service';
 import { ConfigService } from '@nestjs/config';
+import { compareSync } from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import _, { isNil } from 'lodash';
+import { DB, DbType } from '../global/providers/db.provider';
+import { USERS } from '../schema';
+import { TokenService } from '../token/token.service';
+import { forbidden, notFound } from '../utils/exceptions.utils';
+import { LoginRequest } from './types';
 
 @Injectable()
 export class AuthService {
@@ -18,15 +18,26 @@ export class AuthService {
   ) {}
 
   async login(loginRequest: LoginRequest) {
-    const users = await this.db
-      .select()
-      .from(USERS)
-      .where(eq(USERS.username, loginRequest.username));
-
-    if (_.isEmpty(users)) {
+    const user = await this.db.query.USERS.findFirst({
+      where: eq(USERS.username, loginRequest.username),
+      with: {
+        markets: {
+          columns: {
+            role: true,
+          },
+          with: {
+            market: {
+              columns: {
+                code: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (isNil(user)) {
       throw notFound(`User ${loginRequest.username} not found`);
     }
-    const user = users[0];
     if (!compareSync(loginRequest.password, user.password)) {
       throw forbidden('Password incorrect');
     }
@@ -51,11 +62,14 @@ export class AuthService {
     return this.getAccessTokens(users[0]);
   }
 
-  private getAccessTokens(user: User) {
+  private getAccessTokens(user: any) {
     const token = this.tokenService.generateToken(
       {
         uid: user.id,
-        role: user.role,
+        markets: user.markets.map(({ market, role }) => ({
+          role,
+          market: market.role,
+        })),
       },
       this.config.get<string | number>('TOKEN_EXPIRATION'),
     );

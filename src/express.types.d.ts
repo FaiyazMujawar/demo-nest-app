@@ -3,11 +3,12 @@ declare namespace Express {
 
   export interface UserEntity {
     id: string;
-    role: Role;
-    market: number;
     username: string;
+    superadmin: boolean;
+    markets: { [market: number]: Role };
   }
   interface Request {
     user?: UserEntity;
+    market?: number;
   }
 }
